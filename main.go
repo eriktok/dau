@@ -2,18 +2,29 @@ package main
 
 import (
 	"bufio"
+	"flag"
 	"fmt"
 	"io"
 	"log"
 	"net/http"
 	"os"
+	"path/filepath"
 	"strings"
 	"sync"
 )
 
-// var outputDir = flag.String("o", "/js", " output directory name")
+var outputDir = flag.String("o", "/js", " output directory name")
 
 func main() {
+	flag.Parse()
+	currentDir, err := os.Getwd()
+	joined := filepath.Join(currentDir, *outputDir)
+	path := joined + "/"
+	createFolderIfNotExist(joined)
+	if err != nil {
+		log.Fatalf("Could not get current working directory: %v", err)
+	}
+	fmt.Println(currentDir)
 	urls := make([]string, 0)
 	scanner := bufio.NewScanner(os.Stdin)
 	for scanner.Scan() {
@@ -23,10 +34,10 @@ func main() {
 	if err := scanner.Err(); err != nil {
 		log.Fatalf("Error reading from stdin: %v", err)
 	}
-	downloadUrls(urls)
+	downloadUrls(urls, path)
 }
 
-func downloadUrls(urls []string) {
+func downloadUrls(urls []string, path string) {
 	var wg sync.WaitGroup
 
 	wg.Add(len(urls))
@@ -38,7 +49,7 @@ func downloadUrls(urls []string) {
 			fileName := tokens[len(tokens)-1]
 			fmt.Println("Downloading", url, "to", fileName)
 
-			output, err := os.Create(fileName)
+			output, err := os.Create(path + fileName)
 			if err != nil {
 				log.Fatal("Error while creating", fileName, "-", err)
 			}
@@ -60,4 +71,16 @@ func downloadUrls(urls []string) {
 	}
 	wg.Wait()
 	fmt.Println("Done")
+}
+
+func createFolderIfNotExist(folderPath string) {
+	if _, err := os.Stat(folderPath); os.IsNotExist(err) {
+		err = os.MkdirAll(folderPath, os.ModePerm)
+		if err != nil {
+			fmt.Println(err)
+		}
+		fmt.Println("Folder created: ", folderPath)
+	} else {
+		fmt.Println("Folder already exist: ", folderPath)
+	}
 }
