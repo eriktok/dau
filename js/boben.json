@@ -1,0 +1,5 @@
+[{
+  "name": "password",
+  "key": "(password|passwd)",
+  "value": "[^\\s]+"
+}]
